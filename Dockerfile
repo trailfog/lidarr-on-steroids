@@ -1,6 +1,6 @@
 FROM docker.io/library/node:16-alpine as deemix
 
-RUN apk add --no-cache git jq python3 make gcc && \
+RUN apk add --no-cache git jq python3 make gcc musl-dev g++ && \
     rm -rf /var/lib/apt/lists/*
 RUN git clone --recurse-submodules https://gitlab.com/RemixDev/deemix-gui.git
 WORKDIR deemix-gui
