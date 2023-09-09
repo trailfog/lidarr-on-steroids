@@ -1,12 +1,15 @@
-FROM docker.io/library/node:alpine as deemix
+FROM docker.io/library/node:16-alpine as deemix
 
-RUN apk add git jq
-RUN git clone https://gitlab.com/RemixDev/deemix-gui.git
-RUN cd deemix-gui
-RUN git submodule update --init --recursive
+RUN apk add --no-cache git jq python3 make gcc && \
+    rm -rf /var/lib/apt/lists/*
+RUN git clone --recurse-submodules https://gitlab.com/RemixDev/deemix-gui.git
+WORKDIR deemix-gui
+RUN jq '.pkg.targets = ["node16-alpine-x64","node16-alpine-arm64"]' ./server/package.json > tmp-json && \
+    mv tmp-json /deemix-gui/server/package.json
+RUN yarn config set network-timeout 1000000 -g
+RUN yarn add pkg@latest
 RUN yarn install-all
-RUN jq '.pkg.targets = ["node16-alpine-x64"]' ./server/package.json > tmp-json
-RUN mv tmp-json /deemix-gui/server/package.json
+RUN yarn dist-server
 # Patching deemix: see issue https://github.com/youegraillot/lidarr-on-steroids/issues/63
 RUN sed -i 's/const channelData = await dz.gw.get_page(channelName)/let channelData; try { channelData = await dz.gw.get_page(channelName); } catch (error) { console.error(`Caught error ${error}`); return [];}/' ./server/src/routes/api/get/newReleases.ts
 RUN yarn dist-server
